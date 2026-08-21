@@ -436,19 +436,19 @@ public class SqliteAdapter : ISqlOperationsAdapter
                     var ownedFastProperty = tableInfo.FastPropertyDict[ownedPropertyName];
                     var ownedProperty = ownedFastProperty.Property;
 
-                    var propertyType = Nullable.GetUnderlyingType(ownedProperty.GetType()) ?? ownedProperty.GetType();
-                    if (!command.Parameters.Contains("@" + parameterName))
-                    {
-                        var parameter = new SqliteParameter($"@{parameterName}", propertyType);
-                        command.Parameters.Add(parameter);
-                    }
-
-                    if (ownedProperty == null)
+                    if (ownedProperty is null)
                     {
                         value = null;
                     }
                     else
                     {
+                        var propertyType = Nullable.GetUnderlyingType(ownedProperty.PropertyType) ?? ownedProperty.PropertyType;
+                        if (!command.Parameters.Contains("@" + parameterName))
+                        {
+                            var parameter = new SqliteParameter($"@{parameterName}", propertyType);
+                            command.Parameters.Add(parameter);
+                        }
+
                         var ownedPropertyValue = entity == null ? null : tableInfo.FastPropertyDict[ownedPropertyName].Get(entity);
                         var subPropertyFullName = $"{ownedPropertyName}_{subPropertyName}";
                         value = ownedPropertyValue == null ? null : tableInfo.FastPropertyDict[subPropertyFullName]?.Get(ownedPropertyValue);
@@ -524,7 +524,7 @@ public class SqliteAdapter : ISqlOperationsAdapter
         string identityPropertyName = tableInfo.PropertyColumnNamesDict.SingleOrDefault(a => a.Value == tableInfo.IdentityColumnName).Key;
         FastProperty identityFastProperty = tableInfo.FastPropertyDict[identityPropertyName];
 
-        string idTypeName = identityFastProperty.Property.PropertyType.Name;
+        string idTypeName = (identityFastProperty.UnderlyingType ?? throw new InvalidOperationException($"Unable to determine the underlying type for '{tableInfo.IdentityColumnName}'.")).Name;
         object? idValue = null;
         for (int i = entities.Count() - 1; i >= 0; i--)
         {
