@@ -1153,12 +1153,8 @@ public class TableInfo
             var propertyType = fastProperty.UnderlyingType;
             if (propertyType == typeof(string) || propertyType == typeof(Guid))
             {
-                var propertyInfo = fastProperty.Property;
-                if (propertyInfo is not null)
-                {
-                    entities = entities.OrderBy(p => propertyInfo.GetValue(p, null)).ToList();
-                    entitiesWithOutputIdentity = entitiesWithOutputIdentity.OrderBy(p => propertyInfo.GetValue(p, null)).ToList();
-                }
+                entities = entities.OrderBy(p => fastProperty.Get(p!)).ToList();
+                entitiesWithOutputIdentity = entitiesWithOutputIdentity.OrderBy(p => fastProperty.Get(p)).ToList();
             }
         }
 

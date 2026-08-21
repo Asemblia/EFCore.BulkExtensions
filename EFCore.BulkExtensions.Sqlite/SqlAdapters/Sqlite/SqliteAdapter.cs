@@ -433,6 +433,14 @@ public class SqliteAdapter : ISqlOperationsAdapter
                     var ownedPropertyNameList = propertyColumn.Key.Split('.');
                     var ownedPropertyName = ownedPropertyNameList[0];
                     var subPropertyName = ownedPropertyNameList[1];
+                    var subPropertyFullName = $"{ownedPropertyName}_{subPropertyName}";
+                    var subPropertyType = tableInfo.FastPropertyDict[subPropertyFullName].UnderlyingType ?? throw new InvalidOperationException($"Unable to determine the underlying type for '{propertyColumn.Key}'.");
+                    if (!command.Parameters.Contains("@" + parameterName))
+                    {
+                        var parameter = new SqliteParameter($"@{parameterName}", subPropertyType);
+                        command.Parameters.Add(parameter);
+                    }
+
                     var ownedFastProperty = tableInfo.FastPropertyDict[ownedPropertyName];
                     var ownedProperty = ownedFastProperty.Property;
 
@@ -442,15 +450,7 @@ public class SqliteAdapter : ISqlOperationsAdapter
                     }
                     else
                     {
-                        var propertyType = Nullable.GetUnderlyingType(ownedProperty.PropertyType) ?? ownedProperty.PropertyType;
-                        if (!command.Parameters.Contains("@" + parameterName))
-                        {
-                            var parameter = new SqliteParameter($"@{parameterName}", propertyType);
-                            command.Parameters.Add(parameter);
-                        }
-
                         var ownedPropertyValue = entity == null ? null : tableInfo.FastPropertyDict[ownedPropertyName].Get(entity);
-                        var subPropertyFullName = $"{ownedPropertyName}_{subPropertyName}";
                         value = ownedPropertyValue == null ? null : tableInfo.FastPropertyDict[subPropertyFullName]?.Get(ownedPropertyValue);
                     }
                 }
